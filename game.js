@@ -1,5 +1,5 @@
-// Flappy Shopintoons - jeu style Flappy Bird en 9:16
-// Nadir doit éviter des pubs / panneaux Shopintoons
+// Flappy Shopintoons v5
+// Nadir sur Butter Stick, niveaux de difficulté, compte à rebours, décor + musique
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -10,29 +10,67 @@ const overlayEl = document.getElementById("overlay");
 const overlayTitleEl = document.getElementById("overlayTitle");
 const overlayTextEl = document.getElementById("overlayText");
 const playButton = document.getElementById("playButton");
+const diffButtons = document.querySelectorAll(".diff-btn");
+const musicGameEl = document.getElementById("musicGame");
+const soundGameOverEl = document.getElementById("soundGameOver");
 
-const STORAGE_KEY = "flappy_shopintoons_best";
+const STORAGE_KEY = "flappy_shopintoons_best_v5";
 
-let gameState = "start"; // start | playing | gameover
+const difficulties = {
+  facile: {
+    label: "Facile",
+    gap: 220,
+    speed: 1.8,
+    spawnInterval: 1700,
+    gravity: 0.42,
+    flap: -7.5
+  },
+  moyen: {
+    label: "Moyen",
+    gap: 200,
+    speed: 2.2,
+    spawnInterval: 1500,
+    gravity: 0.46,
+    flap: -7
+  },
+  difficile: {
+    label: "Difficile",
+    gap: 180,
+    speed: 2.6,
+    spawnInterval: 1400,
+    gravity: 0.5,
+    flap: -6.8
+  },
+  shopintueur: {
+    label: "Shopintueur",
+    gap: 160,
+    speed: 3.0,
+    spawnInterval: 1300,
+    gravity: 0.55,
+    flap: -6.5
+  }
+};
+
+let currentDifficulty = "facile";
 
 const bird = {
   x: 90,
   y: canvas.height / 2,
-  radius: 16,
+  radius: 18,
   vy: 0
 };
 
 const physics = {
-  gravity: 0.45,
-  flap: -7
+  gravity: difficulties[currentDifficulty].gravity,
+  flap: difficulties[currentDifficulty].flap
 };
 
 const pipes = [];
 const pipeConfig = {
-  width: 70,
-  gap: 150,
-  speed: 2.5,
-  spawnInterval: 1600 // ms
+  width: 80,
+  gap: difficulties[currentDifficulty].gap,
+  speed: difficulties[currentDifficulty].speed,
+  spawnInterval: difficulties[currentDifficulty].spawnInterval
 };
 
 const obstacleLabels = [
@@ -46,14 +84,60 @@ const obstacleLabels = [
   "LUNETTES ESPION"
 ];
 
+let gameState = "start"; // start | countdown | playing | gameover
 let score = 0;
 let bestScore = 0;
 let lastSpawnTime = 0;
 let lastFrameTime = 0;
 let passedPipeId = null;
 let pipeIdCounter = 0;
+let countdownMs = 0;
+
+// image de Nadir
+const nadirImg = new Image();
+nadirImg.src = "nadir.png";
+
+// --- audio helpers
+
+function playGameMusic() {
+  if (!musicGameEl) return;
+  try {
+    musicGameEl.volume = 0.5;
+    musicGameEl.currentTime = 0;
+    musicGameEl.play();
+  } catch (e) {
+    console.warn("Musique jeu bloquée par le navigateur", e);
+  }
+}
+
+function stopGameMusic() {
+  if (!musicGameEl) return;
+  try {
+    musicGameEl.pause();
+  } catch (e) {}
+}
+
+function playGameOverSound() {
+  if (!soundGameOverEl) return;
+  try {
+    soundGameOverEl.currentTime = 0;
+    soundGameOverEl.play();
+  } catch (e) {
+    console.warn("Son game over bloqué", e);
+  }
+}
 
 // --- utils
+
+function applyDifficulty(key) {
+  currentDifficulty = key;
+  const d = difficulties[key];
+  pipeConfig.gap = d.gap;
+  pipeConfig.speed = d.speed;
+  pipeConfig.spawnInterval = d.spawnInterval;
+  physics.gravity = d.gravity;
+  physics.flap = d.flap;
+}
 
 function resetGame() {
   score = 0;
@@ -96,7 +180,7 @@ function flap() {
 
 function spawnPipe() {
   const minHeight = 60;
-  const maxHeight = canvas.height - pipeConfig.gap - 100;
+  const maxHeight = canvas.height - pipeConfig.gap - 120;
   const topHeight = Math.floor(
     minHeight + Math.random() * (maxHeight - minHeight)
   );
@@ -114,6 +198,14 @@ function spawnPipe() {
 // --- Loop
 
 function update(delta) {
+  if (gameState === "countdown") {
+    countdownMs -= delta;
+    if (countdownMs <= 0) {
+      gameState = "playing";
+    }
+    return;
+  }
+
   if (gameState !== "playing") return;
 
   // gravité
@@ -166,8 +258,12 @@ function update(delta) {
 
 function triggerGameOver() {
   gameState = "gameover";
+  stopGameMusic();
+  playGameOverSound();
   overlayTitleEl.textContent = "GAME OVER";
-  overlayTextEl.textContent = `Score : ${score}  |  Meilleur : ${bestScore}\nClique sur REJOUER pour retenter ta chance !`;
+  overlayTextEl.textContent = `Mode : ${
+    difficulties[currentDifficulty].label
+  }\nScore : ${score}  |  Meilleur : ${bestScore}`;
   playButton.textContent = "Rejouer";
   overlayEl.style.display = "flex";
 }
@@ -175,48 +271,80 @@ function triggerGameOver() {
 // --- dessin
 
 function drawBackground() {
+  // fond dégradé
   const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  grad.addColorStop(0, "#1a0029");
-  grad.addColorStop(0.5, "#3d0241");
+  grad.addColorStop(0, "#1b0030");
+  grad.addColorStop(0.4, "#3c0144");
   grad.addColorStop(1, "#05020a");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // sol type plateau TV
-  ctx.fillStyle = "#120215";
-  ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
-  ctx.fillStyle = "#ffef5a33";
-  ctx.fillRect(0, canvas.height - 82, canvas.width, 2);
+  // projecteurs
+  ctx.fillStyle = "rgba(255, 239, 90, 0.18)";
+  ctx.beginPath();
+  ctx.moveTo(-40, canvas.height);
+  ctx.lineTo(canvas.width * 0.3, canvas.height * 0.35);
+  ctx.lineTo(canvas.width * 0.6, canvas.height);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(canvas.width + 40, canvas.height);
+  ctx.lineTo(canvas.width * 0.7, canvas.height * 0.3);
+  ctx.lineTo(canvas.width * 0.4, canvas.height);
+  ctx.closePath();
+  ctx.fill();
+
+  // plateau
+  const baseY = canvas.height - 80;
+  ctx.fillStyle = "#120016";
+  ctx.fillRect(0, baseY, canvas.width, 80);
+  ctx.fillStyle = "#ffef5a66";
+  ctx.fillRect(0, baseY - 2, canvas.width, 2);
+
+  // leds
+  for (let i = 0; i < canvas.width; i += 24) {
+    ctx.fillStyle = i % 48 === 0 ? "#ff4fa8" : "#12ffb0";
+    ctx.fillRect(i + 6, baseY + 40, 8, 8);
+  }
+
+  // silhouettes de batiments
+  ctx.fillStyle = "#070015";
+  let xPos = 0;
+  const widths = [40, 26, 34, 50, 30, 44];
+  for (let w of widths) {
+    const h = 40 + (w % 20); // hauteur pseudo fixe
+    ctx.fillRect(xPos, baseY - h, w, h);
+    xPos += w + 8;
+    if (xPos > canvas.width) break;
+  }
+
+  // grande enseigne Shopintoons
+  ctx.fillStyle = "#ffef5a";
+  ctx.fillRect(canvas.width / 2 - 70, baseY - 50, 140, 18);
+  ctx.fillStyle = "#2b1b47";
+  ctx.font = "bold 12px system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("SHOPINTOONS STUDIO", canvas.width / 2, baseY - 41);
 }
 
 function drawBird() {
-  // corps
   ctx.save();
   ctx.translate(bird.x, bird.y);
   ctx.rotate(Math.max(-0.5, Math.min(0.6, bird.vy / 10)));
-  ctx.fillStyle = "#12ffb0";
-  ctx.beginPath();
-  ctx.ellipse(0, 0, bird.radius + 4, bird.radius, 0, 0, Math.PI * 2);
-  ctx.fill();
 
-  // tête
-  ctx.fillStyle = "#ffffff";
-  ctx.beginPath();
-  ctx.arc(6, -6, 8, 0, Math.PI * 2);
-  ctx.fill();
+  const w = 80;
+  const h = 80;
 
-  // oeil
-  ctx.fillStyle = "#000000";
-  ctx.beginPath();
-  ctx.arc(8, -7, 3, 0, Math.PI * 2);
-  ctx.fill();
-
-  // bouche / barbe Nadir cartoon
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(6, -2, 5, 0.2, 2.5);
-  ctx.stroke();
+  if (nadirImg.complete) {
+    ctx.drawImage(nadirImg, -w / 2, -h / 2, w, h);
+  } else {
+    ctx.fillStyle = "#12ffb0";
+    ctx.beginPath();
+    ctx.arc(0, 0, bird.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   ctx.restore();
 }
@@ -227,18 +355,35 @@ function drawPipes() {
     const gapBottom = p.topHeight + pipeConfig.gap;
 
     // top pipe
-    ctx.fillStyle = "#ff4fa8";
+    const topGrad = ctx.createLinearGradient(p.x, 0, p.x + pipeConfig.width, 0);
+    topGrad.addColorStop(0, "#ff4fa8");
+    topGrad.addColorStop(1, "#ffb347");
+    ctx.fillStyle = topGrad;
     ctx.fillRect(p.x, 0, pipeConfig.width, gapTop);
 
     // bottom pipe
-    ctx.fillStyle = "#00ff9d";
+    const bottomGrad = ctx.createLinearGradient(
+      p.x,
+      gapBottom,
+      p.x + pipeConfig.width,
+      gapBottom
+    );
+    bottomGrad.addColorStop(0, "#12ffb0");
+    bottomGrad.addColorStop(1, "#00bcd4");
+    ctx.fillStyle = bottomGrad;
     ctx.fillRect(p.x, gapBottom, pipeConfig.width, canvas.height - gapBottom);
+
+    // bordures
+    ctx.strokeStyle = "#120016";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(p.x, 0, pipeConfig.width, gapTop);
+    ctx.strokeRect(p.x, gapBottom, pipeConfig.width, canvas.height - gapBottom);
 
     // panneau label
     ctx.fillStyle = "#120215ee";
     const panelHeight = 26;
     const panelY = gapTop - panelHeight - 8;
-    if (panelY > 0) {
+    if (panelY > 10) {
       ctx.fillRect(p.x - 6, panelY, pipeConfig.width + 12, panelHeight);
       ctx.fillStyle = "#ffef5a";
       ctx.font = "10px system-ui";
@@ -247,6 +392,25 @@ function drawPipes() {
       ctx.fillText(p.label, p.x + pipeConfig.width / 2, panelY + panelHeight / 2);
     }
   });
+}
+
+function drawCountdown() {
+  if (gameState !== "countdown") return;
+
+  let text = "";
+  if (countdownMs > 2400) text = "3";
+  else if (countdownMs > 1600) text = "2";
+  else if (countdownMs > 800) text = "1";
+  else text = "GO!";
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#ffef5a";
+  ctx.font = text === "GO!" ? "bold 48px system-ui" : "bold 64px system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
 }
 
 function checkCollision(b, pipe) {
@@ -269,13 +433,11 @@ function loop(timestamp) {
   const delta = timestamp - lastFrameTime;
   lastFrameTime = timestamp;
 
-  if (gameState === "playing") {
-    update(delta);
-  }
-
+  update(delta);
   drawBackground();
   drawPipes();
   drawBird();
+  drawCountdown();
 
   requestAnimationFrame(loop);
 }
@@ -287,7 +449,9 @@ function startGame() {
   overlayEl.style.display = "none";
   overlayTitleEl.textContent = "FLAPPY SHOPINTOONS";
   playButton.textContent = "Jouer";
-  gameState = "playing";
+  gameState = "countdown";
+  countdownMs = 3200;
+  playGameMusic();
 }
 
 playButton.addEventListener("click", () => {
@@ -300,9 +464,8 @@ canvas.addEventListener("pointerdown", () => {
   if (gameState === "start") {
     startGame();
   } else if (gameState === "gameover") {
-    // on bloque le clic sur le canvas en gameover, on passe par le bouton
     return;
-  } else {
+  } else if (gameState === "playing") {
     flap();
   }
 });
@@ -316,6 +479,18 @@ canvas.addEventListener(
   { passive: false }
 );
 
+// sélection difficulté
+diffButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const diff = btn.getAttribute("data-diff");
+    applyDifficulty(diff);
+
+    diffButtons.forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
 // init
+applyDifficulty(currentDifficulty);
 loadBestScore();
 requestAnimationFrame(loop);
