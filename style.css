@@ -1,0 +1,156 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  background: radial-gradient(circle at top, #ff4fa8 0, #2b1b47 50%, #05020a 100%);
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
+#app {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* HEADER */
+
+.top-bar {
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ffef5a, #ff4fa8);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
+.logo {
+  font-weight: 900;
+  letter-spacing: 2px;
+  font-size: 1.1rem;
+  color: #2b1b47;
+}
+
+.subtitle {
+  font-size: 0.8rem;
+  color: #2b1b47;
+}
+
+/* GAME */
+
+.game-wrapper {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+  background: #000;
+  margin-top: 4px;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* HUD */
+
+#hud {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.score-box {
+  background: rgba(5, 2, 10, 0.8);
+  border-radius: 999px;
+  padding: 4px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.score-box .label {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.score-box .value {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* OVERLAY */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background: radial-gradient(circle at top, rgba(255, 79, 168, 0.85), rgba(5, 2, 10, 0.9));
+}
+
+.overlay-title {
+  font-weight: 900;
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.overlay-text {
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 12px;
+  max-width: 280px;
+}
+
+.btn-primary {
+  border-radius: 999px;
+  border: none;
+  padding: 8px 20px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(135deg, #12ffb0, #00a86b);
+  color: #041014;
+  box-shadow: 0 5px 0 #007850;
+}
+
+.btn-primary:active {
+  transform: translateY(2px);
+  box-shadow: 0 3px 0 #007850;
+}
+
+/* FOOTER */
+
+.footer {
+  font-size: 0.75rem;
+  text-align: center;
+  opacity: 0.9;
+}
+
+/* RESPONSIVE */
+
+@media (max-height: 640px) {
+  #app {
+    padding: 8px;
+  }
+}

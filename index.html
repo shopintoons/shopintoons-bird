@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flappy Shopintoons</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="top-bar">
+      <div class="logo">SHOPINTOONS</div>
+      <div class="subtitle">Flappy Téléshopping</div>
+    </header>
+
+    <main class="game-wrapper">
+      <canvas id="gameCanvas" width="360" height="640"></canvas>
+
+      <div id="hud">
+        <div class="score-box">
+          <span class="label">Score</span>
+          <span id="scoreValue" class="value">0</span>
+        </div>
+        <div class="score-box">
+          <span class="label">Meilleur</span>
+          <span id="bestValue" class="value">0</span>
+        </div>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <div id="overlayTitle" class="overlay-title">FLAPPY SHOPINTOONS</div>
+        <div id="overlayText" class="overlay-text">
+          Tape l'écran ou clique pour faire voler Nadir et éviter les pubs Shopintoons !
+        </div>
+        <button id="playButton" class="btn-primary">Jouer</button>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <span class="tip">Astuce : plus tu passes de pubs, plus ton score monte 📺</span>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
