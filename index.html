@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Flappy Shopintoons</title>
+  <title>Flappy Shopintoons v5</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -30,14 +30,27 @@
       <div id="overlay" class="overlay">
         <div id="overlayTitle" class="overlay-title">FLAPPY SHOPINTOONS</div>
         <div id="overlayText" class="overlay-text">
+          Choisis ta difficulté, puis tape sur JOUER.<br/>
           Tape l'écran ou clique pour faire voler Nadir et éviter les pubs Shopintoons !
         </div>
+
+        <div id="difficultyRow" class="difficulty-row">
+          <button class="diff-btn active" data-diff="facile">Facile</button>
+          <button class="diff-btn" data-diff="moyen">Moyen</button>
+          <button class="diff-btn" data-diff="difficile">Difficile</button>
+          <button class="diff-btn" data-diff="shopintueur">Shopintueur</button>
+        </div>
+
         <button id="playButton" class="btn-primary">Jouer</button>
       </div>
+
+      <!-- Audio (à fournir toi-même) -->
+      <audio id="musicGame" src="music_game.mp3" loop></audio>
+      <audio id="soundGameOver" src="sound_gameover.mp3"></audio>
     </main>
 
     <footer class="footer">
-      <span class="tip">Astuce : plus tu passes de pubs, plus ton score monte 📺</span>
+      <span class="tip">Mode Shopintueur : seules les légendes survivent 😈</span>
     </footer>
   </div>
 
