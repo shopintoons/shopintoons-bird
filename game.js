@@ -1,5 +1,6 @@
-// Flappy Shopintoons v5
-// Nadir sur Butter Stick, niveaux de difficulté, compte à rebours, décor + musique
+// Flappy Shopintoons v6
+// Nadir sur Butter Stick, 4 difficultés, compte à rebours, musique
+// + 10 fonds qui défilent horizontalement
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -14,7 +15,7 @@ const diffButtons = document.querySelectorAll(".diff-btn");
 const musicGameEl = document.getElementById("musicGame");
 const soundGameOverEl = document.getElementById("soundGameOver");
 
-const STORAGE_KEY = "flappy_shopintoons_best_v5";
+const STORAGE_KEY = "flappy_shopintoons_best_v6";
 
 const difficulties = {
   facile: {
@@ -97,6 +98,28 @@ let countdownMs = 0;
 const nadirImg = new Image();
 nadirImg.src = "nadir.png";
 
+// fonds défilants
+const backgroundSources = [
+  "bg1.jpg",
+  "bg2.jpg",
+  "bg3.jpg",
+  "bg4.jpg",
+  "bg5.jpg",
+  "bg6.jpg",
+  "bg7.jpg",
+  "bg8.png",
+  "bg9.jpg",
+  "bg10.jpg"
+];
+
+const backgrounds = backgroundSources.map((src) => {
+  const img = new Image();
+  img.src = src;
+  return img;
+});
+let currentBgIndex = 0;
+let bgOffset = 0;
+
 // --- audio helpers
 
 function playGameMusic() {
@@ -128,6 +151,11 @@ function playGameOverSound() {
 }
 
 // --- utils
+
+function chooseBackground() {
+  currentBgIndex = Math.floor(Math.random() * backgrounds.length);
+  bgOffset = 0;
+}
 
 function applyDifficulty(key) {
   currentDifficulty = key;
@@ -198,12 +226,12 @@ function spawnPipe() {
 // --- Loop
 
 function update(delta) {
+  // gestion du compte à rebours
   if (gameState === "countdown") {
     countdownMs -= delta;
     if (countdownMs <= 0) {
       gameState = "playing";
     }
-    return;
   }
 
   if (gameState !== "playing") return;
@@ -271,62 +299,39 @@ function triggerGameOver() {
 // --- dessin
 
 function drawBackground() {
-  // fond dégradé
-  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  grad.addColorStop(0, "#1b0030");
-  grad.addColorStop(0.4, "#3c0144");
-  grad.addColorStop(1, "#05020a");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const bgImg = backgrounds[currentBgIndex];
+  const w = canvas.width;
+  const h = canvas.height;
 
-  // projecteurs
-  ctx.fillStyle = "rgba(255, 239, 90, 0.18)";
-  ctx.beginPath();
-  ctx.moveTo(-40, canvas.height);
-  ctx.lineTo(canvas.width * 0.3, canvas.height * 0.35);
-  ctx.lineTo(canvas.width * 0.6, canvas.height);
-  ctx.closePath();
-  ctx.fill();
+  if (bgImg && bgImg.complete) {
+    let x = bgOffset;
+    // deux images côte à côte pour boucler
+    ctx.drawImage(bgImg, x, 0, w, h);
+    ctx.drawImage(bgImg, x + w, 0, w, h);
+  } else {
+    // fallback dégradé
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, "#1b0030");
+    grad.addColorStop(0.4, "#3c0144");
+    grad.addColorStop(1, "#05020a");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+  }
 
-  ctx.beginPath();
-  ctx.moveTo(canvas.width + 40, canvas.height);
-  ctx.lineTo(canvas.width * 0.7, canvas.height * 0.3);
-  ctx.lineTo(canvas.width * 0.4, canvas.height);
-  ctx.closePath();
-  ctx.fill();
-
-  // plateau
+  // légère ombre en bas pour le plateau
   const baseY = canvas.height - 80;
-  ctx.fillStyle = "#120016";
-  ctx.fillRect(0, baseY, canvas.width, 80);
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.fillRect(0, baseY, w, 80);
+
+  // bande lumineuse
   ctx.fillStyle = "#ffef5a66";
-  ctx.fillRect(0, baseY - 2, canvas.width, 2);
+  ctx.fillRect(0, baseY - 2, w, 2);
 
   // leds
-  for (let i = 0; i < canvas.width; i += 24) {
+  for (let i = 0; i < w; i += 24) {
     ctx.fillStyle = i % 48 === 0 ? "#ff4fa8" : "#12ffb0";
     ctx.fillRect(i + 6, baseY + 40, 8, 8);
   }
-
-  // silhouettes de batiments
-  ctx.fillStyle = "#070015";
-  let xPos = 0;
-  const widths = [40, 26, 34, 50, 30, 44];
-  for (let w of widths) {
-    const h = 40 + (w % 20); // hauteur pseudo fixe
-    ctx.fillRect(xPos, baseY - h, w, h);
-    xPos += w + 8;
-    if (xPos > canvas.width) break;
-  }
-
-  // grande enseigne Shopintoons
-  ctx.fillStyle = "#ffef5a";
-  ctx.fillRect(canvas.width / 2 - 70, baseY - 50, 140, 18);
-  ctx.fillStyle = "#2b1b47";
-  ctx.font = "bold 12px system-ui";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("SHOPINTOONS STUDIO", canvas.width / 2, baseY - 41);
 }
 
 function drawBird() {
@@ -433,6 +438,15 @@ function loop(timestamp) {
   const delta = timestamp - lastFrameTime;
   lastFrameTime = timestamp;
 
+  // faire défiler le fond en mode countdown + playing
+  if (gameState === "countdown" || gameState === "playing") {
+    const bgSpeed = pipeConfig.speed * 0.4;
+    bgOffset -= bgSpeed;
+    if (bgOffset <= -canvas.width) {
+      bgOffset += canvas.width;
+    }
+  }
+
   update(delta);
   drawBackground();
   drawPipes();
@@ -446,6 +460,7 @@ function loop(timestamp) {
 
 function startGame() {
   resetGame();
+  chooseBackground();
   overlayEl.style.display = "none";
   overlayTitleEl.textContent = "FLAPPY SHOPINTOONS";
   playButton.textContent = "Jouer";
@@ -491,6 +506,7 @@ diffButtons.forEach((btn) => {
 });
 
 // init
+chooseBackground();
 applyDifficulty(currentDifficulty);
 loadBestScore();
 requestAnimationFrame(loop);
